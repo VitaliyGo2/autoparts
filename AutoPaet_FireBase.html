@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoParts Pro — Каталог запчастин</title>
+<!-- Excel export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<style>
+:root{--p:#2563eb;--pd:#1d4ed8;--pl:#dbeafe;--t:#1f2937;--tl:#6b7280;--bg:#f8fafc;--w:#fff;--b:#e5e7eb;--g:#10b981;--r:#ef4444;--y:#f59e0b;--sh:0 1px 3px rgba(0,0,0,0.1);--shl:0 10px 40px rgba(0,0,0,0.12)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--t);line-height:1.6}
+.container{max-width:1280px;margin:0 auto;padding:0 20px}
+header{background:var(--w);border-bottom:1px solid var(--b);position:sticky;top:0;z-index:100}
+.header-top{background:var(--t);color:var(--w);padding:8px 0;font-size:13px}
+.header-main{display:flex;align-items:center;justify-content:space-between;padding:14px 0;gap:16px}
+.logo{font-size:24px;font-weight:800;color:var(--p);text-decoration:none;display:flex;align-items:center;gap:8px}
+.logo-icon{width:36px;height:36px;background:var(--p);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+.header-search{flex:1;max-width:500px;position:relative}
+.header-search input{width:100%;padding:10px 40px 10px 14px;border:2px solid var(--b);border-radius:10px;font-size:14px}
+.header-search input:focus{outline:none;border-color:var(--p)}
+.header-search button{position:absolute;right:4px;top:50%;transform:translateY(-50%);background:var(--p);color:#fff;border:none;padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px}
+.header-actions{display:flex;gap:16px;align-items:center}
+.phone{text-align:right}
+.phone a{color:var(--t);text-decoration:none;font-size:16px;font-weight:700}
+.phone span{font-size:11px;color:var(--tl)}
+.cart-btn{position:relative;background:var(--pl);border:none;width:40px;height:40px;border-radius:10px;cursor:pointer;font-size:18px}
+.cart-btn:hover{background:#bfdbfe}
+.cart-count{position:absolute;top:-4px;right:-4px;background:var(--p);color:#fff;font-size:10px;font-weight:700;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.admin-btn{background:var(--t);color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600}
+.admin-btn:hover{background:#374151}
+nav{background:var(--w);border-bottom:1px solid var(--b);padding:10px 0}
+.nav-links{display:flex;gap:24px;list-style:none;overflow-x:auto}
+.nav-links a{color:var(--t);text-decoration:none;font-weight:500;white-space:nowrap;padding:3px 0;border-bottom:2px solid transparent;font-size:14px}
+.nav-links a:hover,.nav-links a.active{color:var(--p);border-bottom-color:var(--p)}
+.hero{background:linear-gradient(135deg,#1e3a5f 0%,var(--p) 100%);color:#fff;padding:60px 0;text-align:center}
+.hero h1{font-size:36px;margin-bottom:12px;font-weight:800}
+.hero p{font-size:16px;opacity:0.9;margin-bottom:30px;max-width:550px;margin-left:auto;margin-right:auto}
+.search-box{max-width:700px;margin:0 auto;background:#fff;border-radius:14px;padding:6px;display:flex;gap:6px;box-shadow:var(--shl)}
+.search-box input{flex:1;border:none;padding:14px 18px;font-size:15px;border-radius:12px;background:var(--bg)}
+.search-box input:focus{outline:2px solid var(--pl)}
+.search-box button{background:var(--p);color:#fff;border:none;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer}
+.search-box button:hover{background:var(--pd)}
+.vin-search{margin-top:16px;display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.15);padding:8px 18px;border-radius:8px;cursor:pointer;font-size:14px}
+.vin-search:hover{background:rgba(255,255,255,0.25)}
+.section{padding:50px 0}
+.section-title{font-size:26px;font-weight:700;margin-bottom:6px}
+.section-subtitle{color:var(--tl);margin-bottom:28px;font-size:15px}
+.categories{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px}
+.category-card{background:var(--w);border:1px solid var(--b);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s}
+.category-card:hover{border-color:var(--p);box-shadow:var(--sh);transform:translateY(-2px)}
+.category-icon{font-size:36px;margin-bottom:10px}
+.category-card h3{font-size:15px;font-weight:600}
+.category-card p{font-size:12px;color:var(--tl);margin-top:3px}
+.catalog-layout{display:grid;grid-template-columns:260px 1fr;gap:24px}
+.filters{background:var(--w);border:1px solid var(--b);border-radius:12px;padding:20px;height:fit-content;position:sticky;top:130px}
+.filter-group{margin-bottom:20px}
+.filter-group h4{font-size:12px;font-weight:600;margin-bottom:10px;text-transform:uppercase;color:var(--tl);letter-spacing:0.5px}
+.filter-group select,.filter-group input{width:100%;padding:9px 11px;border:1px solid var(--b);border-radius:8px;font-size:13px;margin-bottom:6px;background:#fff}
+.filter-group select:focus,.filter-group input:focus{outline:none;border-color:var(--p)}
+.price-range{display:flex;gap:8px;align-items:center}
+.price-range input{flex:1}
+.btn-primary{background:var(--p);color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;width:100%;font-size:14px}
+.btn-primary:hover{background:var(--pd)}
+.btn-secondary{background:var(--w);color:var(--t);border:1px solid var(--b);padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;width:100%;font-size:14px}
+.btn-secondary:hover{border-color:var(--p);color:var(--p)}
+.btn-danger{background:var(--r);color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px}
+.btn-danger:hover{background:#dc2626}
+.btn-success{background:var(--g);color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px}
+.btn-success:hover{background:#059669}
+.products-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.products-count{color:var(--tl);font-size:13px}
+.products-sort{padding:7px 10px;border:1px solid var(--b);border-radius:8px;background:#fff;font-size:13px}
+.products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.product-card{background:var(--w);border:1px solid var(--b);border-radius:12px;overflow:hidden;transition:all 0.2s;cursor:pointer}
+.product-card:hover{box-shadow:var(--shl);border-color:transparent}
+.product-image{height:180px;background:var(--bg);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.product-image img{width:100%;height:100%;object-fit:cover}
+.product-image .no-img{font-size:50px}
+.product-badge{position:absolute;top:10px;left:10px;background:var(--g);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px}
+.product-badge.out{background:var(--r)}
+.product-badge.low{background:var(--y)}
+.product-info{padding:14px}
+.product-sku{font-size:11px;color:var(--tl);margin-bottom:3px}
+.product-title{font-size:14px;font-weight:600;margin-bottom:6px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.product-fit{font-size:12px;color:var(--tl);margin-bottom:10px}
+.product-bottom{display:flex;justify-content:space-between;align-items:center}
+.product-price{font-size:18px;font-weight:700;color:var(--p)}
+.product-price .old{font-size:12px;color:var(--tl);text-decoration:line-through;font-weight:400;margin-left:4px}
+.add-to-cart{background:var(--pl);color:var(--p);border:none;width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
+.add-to-cart:hover{background:var(--p);color:#fff}
+.product-detail{display:grid;grid-template-columns:1fr 1fr;gap:32px;background:var(--w);border-radius:16px;padding:32px;border:1px solid var(--b)}
+.product-gallery{background:var(--bg);border-radius:12px;height:350px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.product-gallery img{width:100%;height:100%;object-fit:cover}
+.product-gallery .no-img{font-size:100px}
+.product-meta h1{font-size:24px;margin-bottom:10px}
+.product-meta .sku{color:var(--tl);margin-bottom:16px;font-size:14px}
+.product-meta .price-big{font-size:32px;font-weight:800;color:var(--p);margin-bottom:20px}
+.product-meta .description{color:var(--tl);margin-bottom:20px;line-height:1.7;font-size:15px}
+.product-meta .specs{background:var(--bg);border-radius:12px;padding:16px;margin-bottom:20px}
+.spec-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--b);font-size:14px}
+.spec-row:last-child{border-bottom:none}
+.spec-row span:first-child{color:var(--tl)}
+.spec-row span:last-child{font-weight:600}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.actions .btn-primary{flex:1;padding:14px;font-size:15px;min-width:180px}
+.actions .btn-secondary{width:auto;padding:14px 18px}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.active{display:flex}
+.modal{background:var(--w);border-radius:16px;width:100%;max-width:650px;max-height:90vh;overflow-y:auto;box-shadow:var(--shl)}
+.modal-header{padding:20px;border-bottom:1px solid var(--b);display:flex;justify-content:space-between;align-items:center}
+.modal-header h2{font-size:18px}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--tl)}
+.modal-body{padding:20px}
+.cart-item{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--b)}
+.cart-item-image{width:70px;height:70px;background:var(--bg);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;overflow:hidden}
+.cart-item-image img{width:100%;height:100%;object-fit:cover}
+.cart-item-info{flex:1}
+.cart-item-title{font-weight:600;margin-bottom:3px;font-size:14px}
+.cart-item-price{color:var(--p);font-weight:700;font-size:14px}
+.cart-item-qty{display:flex;align-items:center;gap:8px;margin-top:6px}
+.cart-item-qty button{width:28px;height:28px;border:1px solid var(--b);background:#fff;border-radius:6px;cursor:pointer;font-size:16px}
+.cart-item-qty span{font-size:14px;font-weight:600;min-width:20px;text-align:center}
+.cart-item-remove{background:none;border:none;color:var(--r);cursor:pointer;font-size:16px;margin-left:auto}
+.cart-total{display:flex;justify-content:space-between;padding:16px 0;font-size:16px;font-weight:700;border-top:2px solid var(--b);margin-top:8px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;margin-bottom:5px;font-weight:500;font-size:13px}
+.form-group input,.form-group textarea,.form-group select{width:100%;padding:10px;border:1px solid var(--b);border-radius:8px;font-size:14px}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{outline:none;border-color:var(--p)}
+.form-group textarea{resize:vertical;min-height:80px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.admin-panel{display:none}
+.admin-panel.active{display:block}
+.admin-nav{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.admin-nav button{padding:10px 18px;border:1px solid var(--b);background:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600}
+.admin-nav button.active{background:var(--p);color:#fff;border-color:var(--p)}
+.admin-section{display:none}
+.admin-section.active{display:block}
+.table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;border:1px solid var(--b)}
+.table th,.table td{padding:12px;text-align:left;font-size:13px;border-bottom:1px solid var(--b)}
+.table th{background:var(--bg);font-weight:600;color:var(--tl);font-size:12px;text-transform:uppercase}
+.table tr:hover{background:#f9fafb}
+.table td img{width:50px;height:50px;object-fit:cover;border-radius:6px}
+.table .actions-td{display:flex;gap:6px}
+.table .actions-td button{padding:6px 10px;font-size:12px;border-radius:6px;border:none;cursor:pointer}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge.in{background:#d1fae5;color:#065f46}
+.badge.out{background:#fee2e2;color:#991b1b}
+.badge.low{background:#fef3c7;color:#92400e}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:#fff;border:1px solid var(--b);border-radius:12px;padding:20px}
+.stat-card h3{font-size:12px;color:var(--tl);text-transform:uppercase;margin-bottom:8px}
+.stat-card .value{font-size:28px;font-weight:800;color:var(--p)}
+@media print{header,nav,.filters,.admin-nav,.btn-primary,.btn-secondary,.add-to-cart,.cart-btn,.admin-btn{display:none!important}.modal-overlay{display:none!important}body{background:#fff}.product-detail{box-shadow:none;border:none}.catalog-layout{grid-template-columns:1fr}}
+.print-only{display:none}
+@media print{.print-only{display:block}}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--t);color:#fff;padding:14px 22px;border-radius:12px;box-shadow:var(--shl);transform:translateY(100px);opacity:0;transition:all 0.3s;z-index:2000;font-size:14px}
+.toast.show{transform:translateY(0);opacity:1}
+.breadcrumb{display:flex;gap:6px;align-items:center;margin-bottom:16px;font-size:13px;color:var(--tl);flex-wrap:wrap}
+.breadcrumb a{color:var(--p);text-decoration:none}
+.breadcrumb a:hover{text-decoration:underline}
+.page{display:none}
+.page.active{display:block}
+.empty-state{text-align:center;padding:50px 20px;color:var(--tl)}
+.empty-state-icon{font-size:56px;margin-bottom:12px}
+@media(max-width:900px){
+.catalog-layout{grid-template-columns:1fr}.filters{position:static}.product-detail{grid-template-columns:1fr}.hero h1{font-size:26px}.header-main{flex-wrap:wrap}.header-search{order:3;max-width:100%;flex-basis:100%}.form-row{grid-template-columns:1fr}.actions .btn-primary{min-width:100%}
+}
+</style>
+<base target="_blank">
+</head>
+<body>
+
+<header>
+<div class="header-top"><div class="container">⚡ Безкоштовна доставка від 3000 ₴ | 📞 Працюємо щодня 9:00–20:00</div></div>
+<div class="container">
+<div class="header-main">
+<a href="#" class="logo" onclick="showPage('home')"><div class="logo-icon">🚙</div>AutoParts Pro</a>
+<div class="header-search">
+<input type="text" id="headerSearch" placeholder="Пошук по назві, артикулу..." onkeypress="if(event.key==='Enter')searchFromHeader()">
+<button onclick="searchFromHeader()">🔍</button>
+</div>
+<div class="header-actions">
+<div class="phone"><a href="tel:+380501234567">+38 (050) 123-45-67</a></div>
+<button class="cart-btn" onclick="toggleCart()">🛒<span class="cart-count" id="cartCount">0</span></button>
+<button class="admin-btn" onclick="showAdminLogin()">🔐 Адмін</button>
+</div>
+</div>
+</div>
+<nav><div class="container">
+<ul class="nav-links">
+<li><a href="#" class="active" onclick="showPage('home');return false">Головна</a></li>
+<li><a href="#" onclick="showPage('catalog');return false">Каталог</a></li>
+<li><a href="#" onclick="showVinSearch();return false">🔍 VIN-пошук</a></li>
+<li><a href="#" onclick="showPage('catalog');filterByCategory('Гальмівна система');return false">Гальма</a></li>
+<li><a href="#" onclick="showPage('catalog');filterByCategory('Фільтри');return false">Фільтри</a></li>
+<li><a href="#" onclick="showPage('catalog');filterByCategory('Двигун');return false">Двигун</a></li>
+<li><a href="#" onclick="showPage('catalog');filterByCategory('Підвіска');return false">Підвіска</a></li>
+<li><a href="#" onclick="showPage('catalog');filterByCategory('Електрика');return false">Електрика</a></li>
+</ul>
+</div></nav>
+</header>
+
+<div id="page-home" class="page active">
+<section class="hero">
+<div class="container">
+<h1>Знайдіть будь-яку запчастину</h1>
+<p>Оригінальні деталі та якісні аналоги. Доставка по всій Україні.</p>
+<div class="search-box">
+<input type="text" id="heroSearch" placeholder="Назва, артикул, OEM-номер..." onkeypress="if(event.key==='Enter')searchFromHero()">
+<button onclick="searchFromHero()">Знайти</button>
+</div>
+<div class="vin-search" onclick="showVinSearch()"><span>🔍</span><span>Пошук по VIN-номеру</span></div>
+</div>
+</section>
+<section class="section"><div class="container">
+<h2 class="section-title">Категорії</h2>
+<p class="section-subtitle">Оберіть вузол для вашого авто</p>
+<div class="categories" id="homeCategories"></div>
+</div></section>
+</div>
+
+<div id="page-catalog" class="page">
+<div class="container" style="padding-top:24px">
+<div class="breadcrumb"><a href="#" onclick="showPage('home');return false">Головна</a><span>/</span><span>Каталог</span></div>
+<div class="catalog-layout">
+<aside class="filters">
+<div class="filter-group"><h4>Марка авто</h4><select id="filterBrand" onchange="applyFilters()"><option value="">Всі марки</option></select></div>
+<div class="filter-group"><h4>Модель</h4><select id="filterModel" onchange="applyFilters()"><option value="">Всі моделі</option></select></div>
+<div class="filter-group"><h4>Рік</h4><select id="filterYear" onchange="applyFilters()"><option value="">Всі роки</option></select></div>
+<div class="filter-group"><h4>Категорія</h4><select id="filterCategory" onchange="applyFilters()"><option value="">Всі категорії</option></select></div>
+<div class="filter-group"><h4>Ціна, ₴</h4><div class="price-range"><input type="number" id="priceFrom" placeholder="Від" onchange="applyFilters()"><span>—</span><input type="number" id="priceTo" placeholder="До" onchange="applyFilters()"></div></div>
+<button class="btn-primary" onclick="applyFilters()">Застосувати</button>
+<button class="btn-secondary" style="margin-top:12px" onclick="resetFilters()">Скинути</button>
+</aside>
+<div>
+<div class="products-header">
+<span class="products-count" id="productsCount">Завантаження...</span>
+<select class="products-sort" id="sortSelect" onchange="applyFilters()">
+<option value="popular">За популярністю</option><option value="price-asc">Від дешевих</option><option value="price-desc">Від дорогих</option>
+</select>
+</div>
+<div class="products-grid" id="productsGrid"></div>
+</div>
+</div>
+</div>
+</div>
+
+<div id="page-product" class="page">
+<div class="container" style="padding-top:24px">
+<div class="breadcrumb"><a href="#" onclick="showPage('home');return false">Головна</a><span>/</span><a href="#" onclick="showPage('catalog');return false">Каталог</a><span>/</span><span id="productBreadcrumb">Товар</span></div>
+<div id="productDetail"></div>
+</div>
+</div>
+
+<div id="page-admin" class="page admin-panel">
+<div class="container" style="padding-top:24px">
+<div class="breadcrumb"><span>🔐 Адмін-панель</span></div>
+<div class="admin-nav">
+<button class="active" onclick="showAdminSection('products')">📦 Товари</button>
+<button onclick="showAdminSection('categories')">📁 Категорії</button>
+<button onclick="showAdminSection('add')">➕ Додати товар</button>
+<button onclick="showAdminSection('stats')">📊 Статистика</button>
+<button onclick="showAdminSection('export')">📄 Експорт / Друк</button>
+<button onclick="showAdminSection('orders')">📝 Заявки</button>
+<button class="btn-secondary" onclick="logoutAdmin()" style="width:auto">Вийти</button>
+</div>
+
+<div id="admin-products" class="admin-section active">
+<h2 class="section-title">Список товарів</h2>
+<input type="text" id="adminProductSearch" placeholder="Пошук товарів..." style="width:100%;max-width:400px;padding:10px;border:1px solid var(--b);border-radius:8px;margin-bottom:16px" oninput="renderAdminProducts()">
+<div style="overflow-x:auto"><table class="table"><thead><tr><th>Фото</th><th>Назва</th><th>Артикул</th><th>Категорія</th><th>Ціна</th><th>К-сть</th><th>Статус</th><th>Дії</th></tr></thead><tbody id="adminProductsTable"></tbody></table></div>
+</div>
+
+<div id="admin-categories" class="admin-section">
+<h2 class="section-title">Категорії</h2>
+<div style="display:flex;gap:10px;margin-bottom:20px;max-width:500px;flex-wrap:wrap">
+<input type="text" id="newCategoryName" placeholder="Назва нової категорії" style="flex:1;padding:10px;border:1px solid var(--b);border-radius:8px">
+<input type="text" id="newCategoryIcon" placeholder="Іконка (emoji)" style="width:100px;padding:10px;border:1px solid var(--b);border-radius:8px" value="📦">
+<button class="btn-primary" style="width:auto" onclick="addCategory()">Додати</button>
+</div>
+<div id="adminCategoriesList"></div>
+</div>
+
+<div id="admin-add" class="admin-section">
+<h2 class="section-title" id="productFormTitle">Додати товар</h2>
+<form id="productForm" onsubmit="saveProduct(event)" style="max-width:700px">
+<input type="hidden" id="editProductId">
+<div class="form-row">
+<div class="form-group" style="flex:2"><label>Назва товару *</label><input type="text" id="pName" required></div>
+<div class="form-group"><label>Артикул *</label><input type="text" id="pSku" required></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Категорія *</label><select id="pCategory" required></select></div>
+<div class="form-group"><label>Марка авто *</label><input type="text" id="pBrand" placeholder="Toyota" required></div>
+<div class="form-group"><label>Модель *</label><input type="text" id="pModel" placeholder="Camry" required></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Рік випуску</label><input type="text" id="pYear" placeholder="2018"></div>
+<div class="form-group"><label>VIN-сумісність</label><input type="text" id="pVin" placeholder="JTDBU..."></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Ціна, ₴ *</label><input type="number" id="pPrice" required min="0"></div>
+<div class="form-group"><label>Стара ціна, ₴</label><input type="number" id="pOldPrice" min="0"></div>
+<div class="form-group"><label>Кількість на складі *</label><input type="number" id="pQty" required min="0"></div>
+</div>
+<div class="form-group"><label>Посилання на фото (URL)</label><input type="url" id="pImage" placeholder="https://..."></div>
+<div class="form-group"><label>Опис</label><textarea id="pDesc" placeholder="Опис товару..."></textarea></div>
+<div style="display:flex;gap:10px">
+<button type="submit" class="btn-primary" style="width:auto;min-width:150px">💾 Зберегти</button>
+<button type="button" class="btn-secondary" style="width:auto" onclick="clearProductForm()">Очистити</button>
+</div>
+</form>
+</div>
+
+<div id="admin-stats" class="admin-section">
+<h2 class="section-title">Статистика</h2>
+<div class="stats-grid">
+<div class="stat-card"><h3>Всього товарів</h3><div class="value" id="statTotalProducts">0</div></div>
+<div class="stat-card"><h3>На складі</h3><div class="value" id="statInStock">0</div></div>
+<div class="stat-card"><h3>Закінчується (&lt;5)</h3><div class="value" id="statLowStock" style="color:var(--y)">0</div></div>
+<div class="stat-card"><h3>Відсутні</h3><div class="value" id="statOutStock" style="color:var(--r)">0</div></div>
+<div class="stat-card"><h3>Заявок</h3><div class="value" id="statOrders">0</div></div>
+<div class="stat-card"><h3>Загальна вартість</h3><div class="value" id="statTotalValue">0 ₴</div></div>
+</div>
+<h3 style="margin:24px 0 12px">Товари, що закінчуються</h3>
+<div style="overflow-x:auto"><table class="table"><thead><tr><th>Назва</th><th>Артикул</th><th>К-сть</th><th>Дія</th></tr></thead><tbody id="lowStockTable"></tbody></table></div>
+</div>
+
+<div id="admin-export" class="admin-section">
+<h2 class="section-title">Експорт та друк</h2>
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px">
+<button class="btn-primary" style="width:auto" onclick="exportToExcel()">📊 Експорт в Excel</button>
+<button class="btn-primary" style="width:auto;background:var(--g)" onclick="printPriceTags()">🏷️ Друк цінників</button>
+<button class="btn-primary" style="width:auto;background:var(--t)" onclick="printInventory()">📋 Друк накладної</button>
+</div>
+<div id="printArea" style="background:#fff;padding:20px;border:1px solid var(--b);border-radius:12px"></div>
+</div>
+
+<div id="admin-orders" class="admin-section">
+<h2 class="section-title">Заявки клієнтів</h2>
+<div style="overflow-x:auto"><table class="table"><thead><tr><th>№</th><th>Дата</th><th>Клієнт</th><th>Телефон</th><th>Товарів</th><th>Сума</th><th>Коментар</th><th>Дія</th></tr></thead><tbody id="ordersTable"></tbody></table></div>
+</div>
+</div>
+</div>
+
+<div class="modal-overlay" id="cartModal" onclick="if(event.target===this)toggleCart()">
+<div class="modal">
+<div class="modal-header"><h2>🛒 Кошик</h2><button class="modal-close" onclick="toggleCart()">✕</button></div>
+<div class="modal-body" id="cartBody"></div>
+</div>
+</div>
+
+<div class="modal-overlay" id="vinModal" onclick="if(event.target===this)closeVin()">
+<div class="modal" style="max-width:450px">
+<div class="modal-header"><h2>🔍 Пошук по VIN</h2><button class="modal-close" onclick="closeVin()">✕</button></div>
+<div class="modal-body">
+<div style="background:var(--pl);border-left:4px solid var(--p);padding:14px;border-radius:0 8px 8px 0;margin-bottom:16px;font-size:13px">Введіть VIN-номер вашого автомобіля (17 символів), і ми підберемо сумісні запчастини.</div>
+<div class="form-group"><label>VIN-номер</label><input type="text" id="vinInput" placeholder="JTDBU4EE3B9123456" maxlength="17" style="text-transform:uppercase"></div>
+<button class="btn-primary" onclick="searchByVin()">Знайти</button>
+</div>
+</div>
+</div>
+
+<div class="modal-overlay" id="orderModal" onclick="if(event.target===this)closeOrder()">
+<div class="modal" style="max-width:450px">
+<div class="modal-header"><h2>📋 Оформлення заявки</h2><button class="modal-close" onclick="closeOrder()">✕</button></div>
+<div class="modal-body">
+<p style="margin-bottom:16px;color:var(--tl);font-size:14px">Залиште контакти — менеджер зателефонує для уточнення.</p>
+<div class="form-group"><label>Ім'я *</label><input type="text" id="orderName" required></div>
+<div class="form-group"><label>Телефон *</label><input type="tel" id="orderPhone" placeholder="+38 (0__) ___-__-__" required></div>
+<div class="form-group"><label>Коментар</label><textarea id="orderComment" rows="2"></textarea></div>
+<button class="btn-primary" onclick="submitOrder()">Відправити заявку</button>
+</div>
+</div>
+</div>
+
+<div class="modal-overlay" id="adminLoginModal" onclick="if(event.target===this)closeAdminLogin()">
+<div class="modal" style="max-width:400px">
+<div class="modal-header"><h2>🔐 Вхід в адмін-панель</h2><button class="modal-close" onclick="closeAdminLogin()">✕</button></div>
+<div class="modal-body">
+<div class="form-group"><label>Пароль</label><input type="password" id="adminPassword" placeholder="Введіть пароль" onkeypress="if(event.key==='Enter')loginAdmin()"></div>
+<button class="btn-primary" onclick="loginAdmin()">Увійти</button>
+<p style="margin-top:12px;font-size:12px;color:var(--tl)">Пароль за замовчуванням: <b>admin</b></p>
+</div>
+</div>
+</div>
+
+<footer style="background:var(--t);color:#fff;padding:50px 0 24px;margin-top:50px">
+<div class="container">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:32px;margin-bottom:32px;font-size:14px">
+<div><h4 style="margin-bottom:16px">🚙 AutoParts Pro</h4><p style="color:#9ca3af;line-height:1.7">Каталог автозапчастин. Оригінальні деталі та якісні аналоги.</p></div>
+<div><h4 style="margin-bottom:16px">Контакти</h4><ul style="list-style:none;color:#9ca3af;line-height:2"><li>📞 +38 (050) 123-45-67</li><li>📧 info@autoparts.pro</li><li>📍 Київ, вул. Автозаводська, 15</li></ul></div>
+</div>
+<div style="border-top:1px solid #374151;padding-top:24px;text-align:center;color:#9ca3af;font-size:13px">© 2026 AutoParts Pro</div>
+</div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+
+// ===================== FIREBASE CONFIG =====================
+// ⚠️ ЗАМІНИ ЦІ 6 РЯДКІВ НА СВОЇ ДАНІ З КОНСОЛІ FIREBASE!
+const firebaseConfig = {
+    apiKey: "AIzaSyBMDZXnQLiE09iVagpR-AUvT2BKafzJuMM",
+    authDomain: "autopart-25265.firebaseapp.com",
+    projectId: "autopart-25265",
+    storageBucket: "autopart-25265.appspot.com",
+    messagingSenderId: "115414168562",
+    appId: "1:115414168562:web:1ca9ef8bf0ec2bb932716b"
+};
+
+// Ініціалізація Firebase
+let db = null;
+let firebaseEnabled = false;
+try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    firebaseEnabled = true;
+    console.log('✅ Firebase підключено');
+} catch(e) {
+    console.warn('⚠️ Firebase не підключено. Працюємо в offline режимі.', e);
+}
+
+// ===================== DEFAULT DATA =====================
+const DEFAULT_CATEGORIES = [
+    {id:'cat1',name:'Гальмівна система',icon:'🛑'},
+    {id:'cat2',name:'Фільтри',icon:'🌀'},
+    {id:'cat3',name:'Двигун',icon:'⚙️'},
+    {id:'cat4',name:'Підвіска',icon:'🔧'},
+    {id:'cat5',name:'Електрика',icon:'⚡'},
+    {id:'cat6',name:'Кузов',icon:'🚗'},
+    {id:'cat7',name:'Трансмісія',icon:'⚙️'},
+    {id:'cat8',name:'Вихлопна система',icon:'🔊'},
+    {id:'cat9',name:'Охолодження',icon:'🌡️'},
+    {id:'cat10',name:'Рульове управління',icon:'🔄'}
+];
+
+const DEFAULT_PRODUCTS = [
+    {id:1,name:"Гальмівні колодки передні Bosch BP501",sku:"BP501-BOSCH",category:"Гальмівна система",brand:"Toyota",model:"Camry",year:"2018",price:1250,oldPrice:1580,image:"",qty:12,vin:"",desc:"Високоякісні гальмівні колодки Bosch. Забезпечують чітке гальмування."},
+    {id:2,name:"Масляний фільтр Mann W712/80",sku:"W71280-MANN",category:"Фільтри",brand:"Volkswagen",model:"Golf",year:"2020",price:320,oldPrice:450,image:"",qty:45,vin:"",desc:"Оригінальний масляний фільтр Mann-Filter."},
+    {id:3,name:"Амортизатор передній Kayaba 339702",sku:"339702-KYB",category:"Підвіска",brand:"BMW",model:"X5",year:"2019",price:2800,oldPrice:3400,image:"",qty:8,vin:"",desc:"Газомасляний амортизатор Kayaba для BMW X5."},
+    {id:4,name:"Свічка запалювання NGK BKR6E",sku:"BKR6E-NGK",category:"Електрика",brand:"Toyota",model:"Corolla",year:"2015",price:180,oldPrice:250,image:"",qty:100,vin:"",desc:"Свічки запалювання NGK — світовий лідер."},
+    {id:5,name:"Гальмівний диск Brembo 09.A259.11",sku:"09A25911-BRE",category:"Гальмівна система",brand:"Audi",model:"A4",year:"2021",price:1850,oldPrice:2200,image:"",qty:6,vin:"",desc:"Вентильовані гальмівні диски Brembo."},
+    {id:6,name:"Повітряний фільтр K&N 33-3005",sku:"333005-KN",category:"Фільтри",brand:"Ford",model:"Focus",year:"2018",price:890,oldPrice:null,image:"",qty:20,vin:"",desc:"Спортивний повітряний фільтр K&N. Мийний."},
+    {id:7,name:"Ремінь ГРМ Contitech CT909",sku:"CT909-CON",category:"Двигун",brand:"Volkswagen",model:"Passat",year:"2012",price:1450,oldPrice:1800,image:"",qty:15,vin:"",desc:"Комплект ременя ГРМ з роликами."},
+    {id:8,name:"Кульова опора Lemforder 27173",sku:"27173-LEM",category:"Підвіска",brand:"Mercedes",model:"E-Class",year:"2020",price:950,oldPrice:1200,image:"",qty:3,vin:"",desc:"Кульова опора Lemforder. Гарантія 2 роки."},
+    {id:9,name:"Стартер Bosch 0 001 109 306",sku:"0001109306-BOS",category:"Електрика",brand:"BMW",model:"3 Series",year:"2019",price:5600,oldPrice:7200,image:"",qty:2,vin:"",desc:"Відновлений стартер Bosch для BMW."},
+    {id:10,name:"Бампер передній Toyota Camry 55",sku:"CAM55-BMP-F",category:"Кузов",brand:"Toyota",model:"Camry",year:"2018",price:4200,oldPrice:5500,image:"",qty:4,vin:"",desc:"Бампер передній для Camry 55. Грунтований."},
+    {id:11,name:"Паливний фільтр Bosch 0 450 906 508",sku:"0450906508-BOS",category:"Фільтри",brand:"Hyundai",model:"Tucson",year:"2021",price:650,oldPrice:800,image:"",qty:30,vin:"",desc:"Паливний фільтр для дизельних двигунів."},
+    {id:12,name:"Гальмівні колодки задні Textar 2373201",sku:"2373201-TEX",category:"Гальмівна система",brand:"Audi",model:"Q5",year:"2022",price:1100,oldPrice:1450,image:"",qty:9,vin:"",desc:"Задні гальмівні колодки Textar."},
+    {id:13,name:"Поршень двигуна Mahle 030 1070",sku:"0301070-MAH",category:"Двигун",brand:"Volkswagen",model:"Golf",year:"2015",price:780,oldPrice:null,image:"",qty:50,vin:"",desc:"Поршень стандартного розміру для VW 1.6 TDI."},
+    {id:14,name:"Важіль підвіски Febi 28338",sku:"28338-FEB",category:"Підвіска",brand:"Ford",model:"Mondeo",year:"2018",price:1350,oldPrice:1700,image:"",qty:7,vin:"",desc:"Передній важіль підвіски Febi Bilstein."},
+    {id:15,name:"Генератор Valeo 439546",sku:"439546-VAL",category:"Електрика",brand:"Kia",model:"Sportage",year:"2020",price:8900,oldPrice:11200,image:"",qty:1,vin:"",desc:"Генератор Valeo для Kia Sportage. 90А."},
+    {id:16,name:"Крило переднє праве Hyundai Tucson",sku:"TUC-CR-R",category:"Кузов",brand:"Hyundai",model:"Tucson",year:"2021",price:3100,oldPrice:3800,image:"",qty:3,vin:"",desc:"Переднє праве крило для Tucson TL."},
+    {id:17,name:"Салонний фільтр Mann CU 22 000",sku:"CU22000-MANN",category:"Фільтри",brand:"BMW",model:"X3",year:"2019",price:420,oldPrice:580,image:"",qty:60,vin:"",desc:"Вугільний салонний фільтр Mann-Filter."},
+    {id:18,name:"Гальмівний циліндр ATE 24.3219-1705.3",sku:"2432191705-ATE",category:"Гальмівна система",brand:"Mercedes",model:"C-Class",year:"2020",price:1680,oldPrice:2100,image:"",qty:5,vin:"",desc:"Головний гальмівний циліндр ATE."},
+    {id:19,name:"Прокладка ГБЦ Elring 915.125",sku:"915125-ELR",category:"Двигун",brand:"Toyota",model:"RAV4",year:"2018",price:580,oldPrice:750,image:"",qty:25,vin:"",desc:"Прокладка ГБЦ для Toyota RAV4 2.5 л."},
+    {id:20,name:"Стійка стабілізатора Moog OP-LS-4945",sku:"OPLS4945-MOO",category:"Підвіска",brand:"Kia",model:"Ceed",year:"2019",price:340,oldPrice:450,image:"",qty:18,vin:"",desc:"Стійка стабілізатора передня Moog. 2 шт."}
+];
+
+// ===================== FIREBASE HELPERS =====================
+async function loadProductsFromFirebase() {
+    if(!firebaseEnabled) return null;
+    try {
+        const snapshot = await db.collection('products').get();
+        const list = [];
+        snapshot.forEach(doc => { list.push({id: parseInt(doc.id), ...doc.data()}); });
+        return list;
+    } catch(e) { console.error('Помилка завантаження товарів:', e); return null; }
+}
+
+async function saveProductToFirebase(product) {
+    if(!firebaseEnabled) return false;
+    try {
+        await db.collection('products').doc(String(product.id)).set(product);
+        return true;
+    } catch(e) { console.error('Помилка збереження товару:', e); return false; }
+}
+
+async function deleteProductFromFirebase(id) {
+    if(!firebaseEnabled) return false;
+    try {
+        await db.collection('products').doc(String(id)).delete();
+        return true;
+    } catch(e) { console.error('Помилка видалення товару:', e); return false; }
+}
+
+async function loadCategoriesFromFirebase() {
+    if(!firebaseEnabled) return null;
+    try {
+        const snapshot = await db.collection('categories').get();
+        const list = [];
+        snapshot.forEach(doc => { list.push({id: doc.id, ...doc.data()}); });
+        return list.length ? list : null;
+    } catch(e) { console.error('Помилка завантаження категорій:', e); return null; }
+}
+
+async function saveCategoryToFirebase(cat) {
+    if(!firebaseEnabled) return false;
+    try {
+        await db.collection('categories').doc(cat.id).set(cat);
+        return true;
+    } catch(e) { console.error('Помилка збереження категорії:', e); return false; }
+}
+
+async function deleteCategoryFromFirebase(id) {
+    if(!firebaseEnabled) return false;
+    try {
+        await db.collection('categories').doc(id).delete();
+        return true;
+    } catch(e) { console.error('Помилка видалення категорії:', e); return false; }
+}
+
+// ===================== LOCAL STORAGE (fallback) =====================
+function getLocal(key, def) {
+    try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : def; }
+    catch(e) { return def; }
+}
+function setLocal(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+// ===================== STATE =====================
+let products = [];
+let categories = [];
+let orders = getLocal('ap_orders', []);
+let cart = getLocal('ap_cart', []);
+let currentFilters = {};
+let currentProduct = null;
+let nextId = 1;
+let dataLoaded = false;
+
+// ===================== INIT DATA =====================
+async function initData() {
+    showToast('⏳ Завантаження даних...');
+
+    // Завантажуємо категорії
+    let catsFromDb = await loadCategoriesFromFirebase();
+    if(catsFromDb) {
+        categories = catsFromDb;
+    } else {
+        categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+        if(firebaseEnabled) {
+            for(const c of categories) await saveCategoryToFirebase(c);
+        }
+    }
+
+    // Завантажуємо товари
+    let prodsFromDb = await loadProductsFromFirebase();
+    if(prodsFromDb && prodsFromDb.length > 0) {
+        products = prodsFromDb;
+    } else {
+        products = JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
+        if(firebaseEnabled) {
+            for(const p of products) await saveProductToFirebase(p);
+        }
+    }
+
+    nextId = Math.max(...products.map(p=>p.id), 0) + 1;
+    dataLoaded = true;
+
+    // Оновлюємо інтерфейс
+    renderHomeCategories();
+    populateFilters();
+    applyFilters();
+    updateCartCount();
+    showToast(firebaseEnabled ? '✅ Дані завантажено з хмари' : '⚠️ Режим offline (Firebase не підключено)');
+}
+
+// ===================== NAVIGATION =====================
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    const el = document.getElementById('page-'+pageId);
+    if(el) el.classList.add('active');
+    window.scrollTo(0,0);
+    document.querySelectorAll('.nav-links a').forEach(a=>a.classList.remove('active'));
+    if(pageId==='home') document.querySelector('.nav-links a:first-child')?.classList.add('active');
+}
+
+function showAdminLogin() { document.getElementById('adminLoginModal').classList.add('active'); document.getElementById('adminPassword').focus(); }
+function closeAdminLogin() { document.getElementById('adminLoginModal').classList.remove('active'); }
+function loginAdmin() {
+    if(document.getElementById('adminPassword').value==='admin') {
+        closeAdminLogin();
+        document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+        document.getElementById('page-admin').classList.add('active');
+        document.getElementById('page-admin').classList.add('admin-panel');
+        initAdmin();
+        showToast('✅ Ви увійшли в адмін-панель');
+    } else {
+        showToast('❌ Невірний пароль');
+    }
+}
+function logoutAdmin() {
+    document.getElementById('page-admin').classList.remove('active');
+    document.getElementById('page-admin').classList.remove('admin-panel');
+    showPage('home');
+    showToast('Ви вийшли з адмін-панелі');
+}
+
+function showAdminSection(sec) {
+    document.querySelectorAll('.admin-section').forEach(s=>s.classList.remove('active'));
+    document.getElementById('admin-'+sec)?.classList.add('active');
+    document.querySelectorAll('.admin-nav button').forEach(b=>b.classList.remove('active'));
+    event.target.classList.add('active');
+    if(sec==='products') renderAdminProducts();
+    if(sec==='categories') renderAdminCategories();
+    if(sec==='stats') renderStats();
+    if(sec==='orders') renderOrders();
+    if(sec==='export') renderPrintPreview();
+    if(sec==='add') initProductForm();
+}
+function initAdmin() {
+    renderAdminProducts();
+    initProductForm();
+}
+
+// ===================== CATEGORIES =====================
+function getCategoryIcon(name) {
+    const c = categories.find(x=>x.name===name);
+    return c ? c.icon : '📦';
+}
+function renderHomeCategories() {
+    const el = document.getElementById('homeCategories');
+    if(!el) return;
+    el.innerHTML = categories.map(c=>`
+        <div class="category-card" onclick="showPage('catalog');filterByCategory('${c.name}')">
+            <div class="category-icon">${c.icon}</div><h3>${c.name}</h3>
+        </div>
+    `).join('');
+}
+function populateCategorySelects() {
+    const opts = '<option value="">Всі категорії</option>' + categories.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+    const el = document.getElementById('filterCategory');
+    if(el) el.innerHTML = opts;
+    const pCat = document.getElementById('pCategory');
+    if(pCat) pCat.innerHTML = categories.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+}
+async function addCategory() {
+    const name = document.getElementById('newCategoryName').value.trim();
+    const icon = document.getElementById('newCategoryIcon').value.trim() || '📦';
+    if(!name) { showToast('Введіть назву категорії'); return; }
+    if(categories.find(c=>c.name===name)) { showToast('Така категорія вже є'); return; }
+    const cat = {id:'cat'+Date.now(),name,icon};
+    categories.push(cat);
+    await saveCategoryToFirebase(cat);
+    document.getElementById('newCategoryName').value='';
+    renderAdminCategories();
+    populateCategorySelects();
+    renderHomeCategories();
+    showToast('Категорію додано');
+}
+async function deleteCategory(id) {
+    if(!confirm('Видалити категорію? Товари цієї категорії залишаться без категорії.')) return;
+    categories = categories.filter(c=>c.id!==id);
+    await deleteCategoryFromFirebase(id);
+    renderAdminCategories();
+    populateCategorySelects();
+    renderHomeCategories();
+    showToast('Категорію видалено');
+}
+function renderAdminCategories() {
+    const el = document.getElementById('adminCategoriesList');
+    if(!el) return;
+    el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">` +
+        categories.map(c=>`
+            <div style="background:#fff;border:1px solid var(--b);border-radius:10px;padding:16px;display:flex;align-items:center;gap:12px">
+                <span style="font-size:28px">${c.icon}</span>
+                <span style="flex:1;font-weight:600">${c.name}</span>
+                <button class="btn-danger" style="width:auto;padding:6px 12px;font-size:12px" onclick="deleteCategory('${c.id}')">Видалити</button>
+            </div>
+        `).join('') + `</div>`;
+}
+
+// ===================== PRODUCT STATUS & IMAGE =====================
+function getStatus(qty) {
+    if(qty<=0) return {text:'Відсутній',class:'out'};
+    if(qty<5) return {text:'Закінчується',class:'low'};
+    return {text:'В наявності',class:'in'};
+}
+function getProductImage(p) {
+    if(p.image && p.image.trim()) return `<img src="${p.image}" alt="" onerror="this.style.display='none';this.parentNode.innerHTML='<span class=no-img>${getCategoryIcon(p.category)}</span>'">`;
+    return `<span class="no-img">${getCategoryIcon(p.category)}</span>`;
+}
+
+// ===================== PRODUCT CRUD =====================
+async function saveProduct(e) {
+    e.preventDefault();
+    const id = parseInt(document.getElementById('editProductId').value) || 0;
+    const p = {
+        id: id || nextId++,
+        name: document.getElementById('pName').value.trim(),
+        sku: document.getElementById('pSku').value.trim(),
+        category: document.getElementById('pCategory').value,
+        brand: document.getElementById('pBrand').value.trim(),
+        model: document.getElementById('pModel').value.trim(),
+        year: document.getElementById('pYear').value.trim(),
+        vin: document.getElementById('pVin').value.trim().toUpperCase(),
+        price: parseFloat(document.getElementById('pPrice').value)||0,
+        oldPrice: parseFloat(document.getElementById('pOldPrice').value)||null,
+        qty: parseInt(document.getElementById('pQty').value)||0,
+        image: document.getElementById('pImage').value.trim(),
+        desc: document.getElementById('pDesc').value.trim()
+    };
+    if(id) {
+        const idx = products.findIndex(x=>x.id===id);
+        if(idx>=0) products[idx] = p;
+    } else {
+        products.push(p);
+    }
+    await saveProductToFirebase(p);
+    clearProductForm();
+    renderAdminProducts();
+    applyFilters();
+    renderHomeCategories();
+    showToast(id ? 'Товар оновлено' : 'Товар додано');
+}
+async function editProduct(id) {
+    const p = products.find(x=>x.id===id);
+    if(!p) return;
+    document.getElementById('editProductId').value = p.id;
+    document.getElementById('pName').value = p.name;
+    document.getElementById('pSku').value = p.sku;
+    document.getElementById('pCategory').value = p.category;
+    document.getElementById('pBrand').value = p.brand;
+    document.getElementById('pModel').value = p.model;
+    document.getElementById('pYear').value = p.year;
+    document.getElementById('pVin').value = p.vin;
+    document.getElementById('pPrice').value = p.price;
+    document.getElementById('pOldPrice').value = p.oldPrice || '';
+    document.getElementById('pQty').value = p.qty;
+    document.getElementById('pImage').value = p.image;
+    document.getElementById('pDesc').value = p.desc;
+    document.getElementById('productFormTitle').textContent = 'Редагувати товар';
+    showAdminSection('add');
+    document.querySelector('.admin-nav button:nth-child(3)').classList.add('active');
+}
+async function deleteProduct(id) {
+    if(!confirm('Видалити товар?')) return;
+    products = products.filter(x=>x.id!==id);
+    await deleteProductFromFirebase(id);
+    renderAdminProducts();
+    applyFilters();
+    showToast('Товар видалено');
+}
+function clearProductForm() {
+    document.getElementById('productForm').reset();
+    document.getElementById('editProductId').value='';
+    document.getElementById('productFormTitle').textContent='Додати товар';
+}
+function initProductForm() {
+    populateCategorySelects();
+}
+function renderAdminProducts() {
+    const search = (document.getElementById('adminProductSearch')?.value||'').toLowerCase();
+    const tbody = document.getElementById('adminProductsTable');
+    if(!tbody) return;
+    let list = products;
+    if(search) list = list.filter(p=>(p.name+' '+p.sku).toLowerCase().includes(search));
+    tbody.innerHTML = list.map(p=>{
+        const st = getStatus(p.qty);
+        return `<tr>
+            <td>${getProductImage(p)}</td>
+            <td><b>${p.name}</b></td>
+            <td>${p.sku}</td>
+            <td>${p.category}</td>
+            <td><b>${p.price} ₴</b></td>
+            <td>${p.qty}</td>
+            <td><span class="badge ${st.class}">${st.text}</span></td>
+            <td class="actions-td">
+                <button class="btn-primary" style="padding:6px 10px;font-size:12px" onclick="editProduct(${p.id})">✏️</button>
+                <button class="btn-danger" style="padding:6px 10px;font-size:12px" onclick="deleteProduct(${p.id})">🗑️</button>
+            </td>
+        </tr>`;
+    }).join('');
+    if(list.length===0) tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--tl);padding:30px">Товарів не знайдено</td></tr>';
+}
+
+// ===================== CLIENT CATALOG =====================
+function getUniqueValues(field) {
+    return [...new Set(products.map(p=>p[field]).filter(Boolean))].sort();
+}
+function populateFilters() {
+    const brands = getUniqueValues('brand');
+    const years = getUniqueValues('year');
+    document.getElementById('filterBrand').innerHTML = '<option value="">Всі марки</option>' + brands.map(b=>`<option value="${b}">${b}</option>`).join('');
+    document.getElementById('filterYear').innerHTML = '<option value="">Всі роки</option>' + years.map(y=>`<option value="${y}">${y}</option>`).join('');
+    populateCategorySelects();
+}
+function applyFilters() {
+    if(!dataLoaded) return;
+    const brand = document.getElementById('filterBrand').value;
+    const category = document.getElementById('filterCategory').value;
+    const year = document.getElementById('filterYear').value;
+    const priceFrom = parseFloat(document.getElementById('priceFrom').value)||0;
+    const priceTo = parseFloat(document.getElementById('priceTo').value)||Infinity;
+    const sort = document.getElementById('sortSelect').value;
+    const searchQuery = (currentFilters.search||'').toLowerCase();
+
+    const modelSel = document.getElementById('filterModel');
+    const curModel = modelSel.value;
+    const models = brand ? [...new Set(products.filter(p=>p.brand===brand).map(p=>p.model))] : [];
+    modelSel.innerHTML = '<option value="">Всі моделі</option>' + models.map(m=>`<option value="${m}" ${m===curModel?'selected':''}>${m}</option>`).join('');
+    const model = modelSel.value;
+
+    let filtered = products.filter(p=>{
+        if(brand && p.brand!==brand) return false;
+        if(model && p.model!==model) return false;
+        if(category && p.category!==category) return false;
+        if(year && p.year!==year) return false;
+        if(p.price<priceFrom || p.price>priceTo) return false;
+        if(searchQuery) {
+            const s = (p.name+' '+p.sku+' '+p.brand+' '+p.model+' '+p.vin).toLowerCase();
+            if(!s.includes(searchQuery)) return false;
+        }
+        return true;
+    });
+    if(sort==='price-asc') filtered.sort((a,b)=>a.price-b.price);
+    else if(sort==='price-desc') filtered.sort((a,b)=>b.price-a.price);
+
+    renderProducts(filtered);
+    document.getElementById('productsCount').textContent = `Знайдено ${filtered.length} товарів`;
+}
+function resetFilters() {
+    document.getElementById('filterBrand').value='';
+    document.getElementById('filterModel').innerHTML='<option value="">Всі моделі</option>';
+    document.getElementById('filterCategory').value='';
+    document.getElementById('filterYear').value='';
+    document.getElementById('priceFrom').value='';
+    document.getElementById('priceTo').value='';
+    currentFilters.search='';
+    applyFilters();
+}
+function filterByCategory(cat) {
+    document.getElementById('filterCategory').value=cat;
+    applyFilters();
+}
+function searchFromHero() {
+    currentFilters.search = document.getElementById('heroSearch').value;
+    showPage('catalog'); applyFilters();
+}
+function searchFromHeader() {
+    currentFilters.search = document.getElementById('headerSearch').value;
+    showPage('catalog'); applyFilters();
+}
+function showVinSearch() { document.getElementById('vinModal').classList.add('active'); }
+function closeVin() { document.getElementById('vinModal').classList.remove('active'); }
+function searchByVin() {
+    const vin = document.getElementById('vinInput').value.trim().toUpperCase();
+    if(vin.length<5){showToast('Введіть коректний VIN');return;}
+    closeVin(); currentFilters.search=vin; showPage('catalog'); applyFilters();
+    showToast(`Пошук по VIN: ${vin}`);
+}
+
+function renderProducts(list) {
+    const grid = document.getElementById('productsGrid');
+    if(!grid) return;
+    if(list.length===0){
+        grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">🔍</div><h3>Товарів не знайдено</h3><p>Спробуйте змінити фільтри</p></div>';
+        return;
+    }
+    grid.innerHTML = list.map(p=>{
+        const st = getStatus(p.qty);
+        return `<div class="product-card" onclick="showProduct(${p.id})">
+            <div class="product-image">${getProductImage(p)}
+                ${p.oldPrice?'<span class="product-badge">Акція</span>':''}
+                ${p.qty<=0?'<span class="product-badge out">Немає</span>':p.qty<5?'<span class="product-badge low">Мало</span>':''}
+            </div>
+            <div class="product-info">
+                <div class="product-sku">${p.sku}</div>
+                <div class="product-title">${p.name}</div>
+                <div class="product-fit">${p.brand} ${p.model} ${p.year?'• '+p.year:''}</div>
+                <div class="product-bottom">
+                    <div class="product-price">${p.price} ₴${p.oldPrice?`<span class="old">${p.oldPrice} ₴</span>`:''}</div>
+                    <button class="add-to-cart" onclick="event.stopPropagation();addToCart(${p.id})" ${p.qty<=0?'disabled style="opacity:0.4;cursor:not-allowed"':''}>+</button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function showProduct(id) {
+    const p = products.find(x=>x.id===id);
+    if(!p) return;
+    currentProduct=p;
+    document.getElementById('productBreadcrumb').textContent=p.name;
+    const st = getStatus(p.qty);
+    document.getElementById('productDetail').innerHTML=`
+        <div class="product-detail">
+            <div class="product-gallery">${getProductImage(p)}</div>
+            <div class="product-meta">
+                <div class="sku">Артикул: ${p.sku}</div>
+                <h1>${p.name}</h1>
+                <div class="price-big">${p.price} ₴</div>
+                <div class="description">${p.desc||'Опис відсутній'}</div>
+                <div class="specs">
+                    <div class="spec-row"><span>Категорія</span><span>${p.category}</span></div>
+                    <div class="spec-row"><span>Марка</span><span>${p.brand}</span></div>
+                    <div class="spec-row"><span>Модель</span><span>${p.model}</span></div>
+                    ${p.year?`<div class="spec-row"><span>Рік</span><span>${p.year}</span></div>`:''}
+                    ${p.vin?`<div class="spec-row"><span>VIN</span><span>${p.vin}</span></div>`:''}
+                    <div class="spec-row"><span>На складі</span><span style="color:${st.class==='in'?'var(--g)':st.class==='low'?'var(--y)':'var(--r)'}">${st.text} (${p.qty} шт)</span></div>
+                </div>
+                <div class="actions">
+                    <button class="btn-primary" onclick="addToCart(${p.id});showToast('Додано до кошика')" ${p.qty<=0?'disabled style="opacity:0.5"':''}>🛒 Додати до кошика</button>
+                    <button class="btn-secondary" onclick="showOrderModal()">📞 Замовити дзвінок</button>
+                </div>
+            </div>
+        </div>`;
+    showPage('product');
+}
+
+// ===================== CART =====================
+function addToCart(id) {
+    const p = products.find(x=>x.id===id);
+    if(!p || p.qty<=0) return;
+    const existing = cart.find(x=>x.id===id);
+    if(existing) {
+        if(existing.qty < p.qty) existing.qty++;
+        else { showToast('Максимальна кількість на складі'); return; }
+    } else {
+        cart.push({id:p.id,name:p.name,price:p.price,image:p.image,qty:1,category:p.category});
+    }
+    setLocal('ap_cart', cart);
+    updateCartCount();
+}
+function updateCartCount() {
+    const count = cart.reduce((s,i)=>s+i.qty,0);
+    document.getElementById('cartCount').textContent = count;
+}
+function toggleCart() {
+    const m = document.getElementById('cartModal');
+    if(m.classList.contains('active')){m.classList.remove('active');return;}
+    renderCart(); m.classList.add('active');
+}
+function renderCart() {
+    const body = document.getElementById('cartBody');
+    if(cart.length===0){
+        body.innerHTML='<div class="empty-state"><div class="empty-state-icon">🛒</div><h3>Кошик порожній</h3></div>';
+        return;
+    }
+    const total = cart.reduce((s,i)=>s+i.price*i.qty,0);
+    body.innerHTML = cart.map(item=>`
+        <div class="cart-item">
+            <div class="cart-item-image">${item.image?`<img src="${item.image}" onerror="this.style.display='none';this.parentNode.innerHTML='<span style=font-size:28px>${getCategoryIcon(item.category)}</span>'">`:`<span style="font-size:28px">${getCategoryIcon(item.category)}</span>`}</div>
+            <div class="cart-item-info">
+                <div class="cart-item-title">${item.name}</div>
+                <div class="cart-item-price">${item.price} ₴</div>
+                <div class="cart-item-qty">
+                    <button onclick="changeCartQty(${item.id},-1)">−</button>
+                    <span>${item.qty}</span>
+                    <button onclick="changeCartQty(${item.id},1)">+</button>
+                </div>
+            </div>
+            <button class="cart-item-remove" onclick="removeFromCart(${item.id})">🗑️</button>
+        </div>
+    `).join('') + `
+        <div class="cart-total"><span>Разом:</span><span>${total} ₴</span></div>
+        <button class="btn-primary" onclick="toggleCart();showOrderModal()">📋 Оформити заявку</button>
+    `;
+}
+function changeCartQty(id,delta) {
+    const item = cart.find(x=>x.id===id);
+    const prod = products.find(x=>x.id===id);
+    if(!item || !prod) return;
+    item.qty += delta;
+    if(item.qty<=0) cart = cart.filter(x=>x.id!==id);
+    else if(item.qty > prod.qty) { item.qty = prod.qty; showToast('Максимум на складі: '+prod.qty); }
+    setLocal('ap_cart', cart);
+    updateCartCount(); renderCart();
+}
+function removeFromCart(id) {
+    cart = cart.filter(x=>x.id!==id);
+    setLocal('ap_cart', cart);
+    updateCartCount(); renderCart();
+}
+
+// ===================== ORDERS =====================
+function showOrderModal() { document.getElementById('orderModal').classList.add('active'); }
+function closeOrder() { document.getElementById('orderModal').classList.remove('active'); }
+async function submitOrder() {
+    const name = document.getElementById('orderName').value.trim();
+    const phone = document.getElementById('orderPhone').value.trim();
+    if(!name||!phone){showToast('Заповніть ім\'я та телефон');return;}
+    const total = cart.reduce((s,i)=>s+i.price*i.qty,0);
+    const order = {
+        id: Date.now(),
+        date: new Date().toLocaleString('uk-UA'),
+        name, phone,
+        comment: document.getElementById('orderComment').value.trim(),
+        items: JSON.parse(JSON.stringify(cart)),
+        total
+    };
+    orders.push(order);
+    setLocal('ap_orders', orders);
+    // Decrease stock
+    for(const c of cart) {
+        const p = products.find(x=>x.id===c.id);
+        if(p) {
+            p.qty -= c.qty;
+            await saveProductToFirebase(p);
+        }
+    }
+    cart=[]; setLocal('ap_cart', cart);
+    updateCartCount();
+    document.getElementById('orderName').value='';
+    document.getElementById('orderPhone').value='';
+    document.getElementById('orderComment').value='';
+    closeOrder();
+    showToast('✅ Заявку відправлено! Менеджер зателефонує.');
+    applyFilters();
+    renderAdminProducts();
+}
+function renderOrders() {
+    const tbody = document.getElementById('ordersTable');
+    if(!tbody) return;
+    if(orders.length===0){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--tl);padding:30px">Заявок поки немає</td></tr>';return;}
+    tbody.innerHTML = orders.slice().reverse().map(o=>`
+        <tr>
+            <td>#${o.id.toString().slice(-6)}</td>
+            <td>${o.date}</td>
+            <td>${o.name}</td>
+            <td>${o.phone}</td>
+            <td>${o.items.length}</td>
+            <td><b>${o.total} ₴</b></td>
+            <td>${o.comment||'—'}</td>
+            <td><button class="btn-danger" style="padding:6px 10px;font-size:12px" onclick="deleteOrder(${o.id})">Видалити</button></td>
+        </tr>
+    `).join('');
+}
+function deleteOrder(id) {
+    if(!confirm('Видалити заявку?')) return;
+    orders = orders.filter(o=>o.id!==id);
+    setLocal('ap_orders', orders);
+    renderOrders();
+    renderStats();
+    showToast('Заявку видалено');
+}
+
+// ===================== STATS =====================
+function renderStats() {
+    const total = products.length;
+    const inStock = products.filter(p=>p.qty>0).length;
+    const low = products.filter(p=>p.qty>0 && p.qty<5).length;
+    const out = products.filter(p=>p.qty<=0).length;
+    const totalValue = products.reduce((s,p)=>s+p.price*p.qty,0);
+    document.getElementById('statTotalProducts').textContent = total;
+    document.getElementById('statInStock').textContent = inStock;
+    document.getElementById('statLowStock').textContent = low;
+    document.getElementById('statOutStock').textContent = out;
+    document.getElementById('statOrders').textContent = orders.length;
+    document.getElementById('statTotalValue').textContent = totalValue.toLocaleString('uk-UA') + ' ₴';
+
+    const lowTable = document.getElementById('lowStockTable');
+    const lowProds = products.filter(p=>p.qty>0 && p.qty<5);
+    if(lowProds.length===0){lowTable.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--tl);padding:20px">Все в порядку — нічого не закінчується</td></tr>';return;}
+    lowTable.innerHTML = lowProds.map(p=>`
+        <tr><td>${p.name}</td><td>${p.sku}</td><td style="color:var(--y);font-weight:700">${p.qty}</td>
+        <td><button class="btn-primary" style="padding:6px 10px;font-size:12px" onclick="editProduct(${p.id})">Поповнити</button></td></tr>
+    `).join('');
+}
+
+// ===================== EXPORT & PRINT =====================
+function exportToExcel() {
+    const data = products.map(p=>({
+        'ID': p.id, 'Назва': p.name, 'Артикул': p.sku, 'Категорія': p.category,
+        'Марка': p.brand, 'Модель': p.model, 'Рік': p.year, 'VIN': p.vin,
+        'Ціна': p.price, 'Стара ціна': p.oldPrice||'', 'Кількість': p.qty, 'Опис': p.desc
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Запчастини');
+    XLSX.writeFile(wb, 'autoparts_catalog.xlsx');
+    showToast('📊 Excel файл завантажено');
+}
+function renderPrintPreview() {
+    const el = document.getElementById('printArea');
+    if(!el) return;
+    el.innerHTML = '<p style="color:var(--tl);margin-bottom:12px">Натисніть кнопку вище для експорту або друку.</p>';
+}
+function printPriceTags() {
+    const win = window.open('','_blank');
+    const html = `<html><head><style>
+        body{font-family:Arial,sans-serif;padding:20px}
+        .tag{border:2px solid #2563eb;border-radius:12px;padding:16px;width:280px;margin:10px;display:inline-block;text-align:center}
+        .tag h3{font-size:14px;margin:0 0 8px}
+        .tag .sku{font-size:11px;color:#666;margin-bottom:8px}
+        .tag .price{font-size:28px;font-weight:800;color:#2563eb}
+        .tag .old{text-decoration:line-through;color:#999;font-size:14px}
+        .tag .barcode{height:40px;background:repeating-linear-gradient(90deg,#000 0,#000 2px,#fff 2px,#fff 4px);margin-top:10px}
+    </style></head><body>` +
+    products.filter(p=>p.qty>0).map(p=>`
+        <div class="tag">
+            <h3>${p.name}</h3>
+            <div class="sku">${p.sku}</div>
+            <div class="price">${p.price} ₴</div>
+            ${p.oldPrice?`<div class="old">${p.oldPrice} ₴</div>`:''}
+            <div class="barcode"></div>
+        </div>
+    `).join('') + `</body></html>`;
+    win.document.write(html);
+    win.document.close();
+    win.print();
+}
+function printInventory() {
+    const win = window.open('','_blank');
+    const total = products.reduce((s,p)=>s+p.price*p.qty,0);
+    const html = `<html><head><style>
+        body{font-family:Arial,sans-serif;padding:30px;max-width:900px;margin:0 auto}
+        h1{text-align:center;margin-bottom:8px}
+        .info{text-align:center;color:#666;margin-bottom:24px;font-size:14px}
+        table{width:100%;border-collapse:collapse;font-size:13px}
+        th,td{border:1px solid #ddd;padding:10px;text-align:left}
+        th{background:#f3f4f6;font-weight:600}
+        .total{text-align:right;font-size:18px;font-weight:700;margin-top:20px}
+    </style></head><body>
+        <h1>🚙 Накладна — AutoParts Pro</h1>
+        <div class="info">Дата: ${new Date().toLocaleString('uk-UA')} | Всього позицій: ${products.length}</div>
+        <table>
+            <tr><th>№</th><th>Артикул</th><th>Назва</th><th>Категорія</th><th>К-сть</th><th>Ціна</th><th>Сума</th></tr>
+            ${products.map((p,i)=>`<tr>
+                <td>${i+1}</td><td>${p.sku}</td><td>${p.name}</td><td>${p.category}</td>
+                <td>${p.qty}</td><td>${p.price} ₴</td><td>${(p.price*p.qty).toLocaleString('uk-UA')} ₴</td>
+            </tr>`).join('')}
+        </table>
+        <div class="total">Загальна вартість складу: ${total.toLocaleString('uk-UA')} ₴</div>
+    </body></html>`;
+    win.document.write(html);
+    win.document.close();
+    win.print();
+}
+
+// ===================== UTILS =====================
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 3000);
+}
+
+// ===================== INIT =====================
+document.addEventListener('DOMContentLoaded', () => {
+    initData();
+});
+</script>
+</body>
+</html>
